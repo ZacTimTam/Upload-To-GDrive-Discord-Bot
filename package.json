@@ -1,0 +1,16 @@
+{
+  "name": "upload-to-gdrive-discord-bot",
+  "version": "1.0.0",
+  "description": "Help upload photos and videos from discord to your personal google drive",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5"
+  }
+}

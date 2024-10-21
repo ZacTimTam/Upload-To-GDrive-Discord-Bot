@@ -134,3 +134,7 @@ config.json
 
 #Ignore download folder
 /commands/downloads
+
+#Google token and creditial files
+credentials.json
+token.json

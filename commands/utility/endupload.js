@@ -3,40 +3,14 @@ const axios = require('axios');
 const fs = require('node:fs');
 const path = require('path');
 const { google } = require('googleapis');
-const { authorize } = require('../../googleAuth'); // Import the authorize function from googleAuth.js
+const { authorize } = require('../../components/googleAuth'); // Import the authorize function from googleAuth.js
+const { uploadFile } = require('../../components/gdriveUpload');
 
 // Import the activeUploadSessions map from startupload.js
 const { activeUploadSessions } = require('./startupload');
 
 const GOOGLE_DRIVE_FOLDER_ID = '1bdUfktk6-84iorby0fJlnbaYis9xIk1z'; // Replace with your Google Drive folder ID
 
-async function uploadFile(authClient, filePath, folderId) {
-    const drive = google.drive({ version: 'v3', auth: authClient });
-    const fileMetadata = {
-        name: path.basename(filePath),
-        parents: [folderId],
-    };
-
-    // Dynamically import mime
-    const mime = (await import('mime')).default;
-    const media = {
-        mimeType: mime.getType(filePath),
-        body: fs.createReadStream(filePath),
-    };
-
-    try {
-        const response = await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id',
-        });
-        console.log(`File ${filePath} uploaded to Google Drive with ID: ${response.data.id}`);
-        return response.data.id;
-    } catch (error) {
-        console.error('Error uploading file to Google Drive:', error);
-        throw error;
-    }
-}
 
 // The endupload command implementation
 module.exports = {

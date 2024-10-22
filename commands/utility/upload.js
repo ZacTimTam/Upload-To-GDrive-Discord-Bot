@@ -2,6 +2,10 @@ const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { authorize } = require('../../components/googleAuth');
+const { uploadFile } = require('../../components/gdriveUpload');
+
+const GOOGLE_DRIVE_FOLDER_ID = '1bdUfktk6-84iorby0fJlnbaYis9xIk1z';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,38 +23,41 @@ module.exports = {
             return;
         }
 
-        // Define the custom download directory
         const downloadDir = path.join(__dirname, '..', 'downloads');
 
-        // Ensure the download directory exists
         if (!fs.existsSync(downloadDir)) {
             fs.mkdirSync(downloadDir, { recursive: true });
         }
 
-        // Set the file path to the custom download directory
         const filePath = path.join(downloadDir, file.name);
 
+        let authClient;
         try {
-            // Download the file
+            authClient = await authorize();
+        } catch (err) {
+            console.log('Failed to authorize Google Drive', err);
+            await interaction.reply({ content: 'Failed to authorize Google Drive.', ephemeral: true });
+            return;
+        }
+
+        try {
             const response = await axios.get(file.url, { responseType: 'stream' });
 
-            // Create a write stream to save the file locally
-            const writer = fs.createWriteStream(filePath);
-
-            response.data.pipe(writer);
-
-            // Listen for the finish event to confirm the file has been written
-            writer.on('finish', async () => {
-                await interaction.reply(`File ${file.name} has been successfully downloaded to ${downloadDir}!`);
+            await new Promise((resolve, reject) => {
+                const writer = fs.createWriteStream(filePath);
+                response.data.pipe(writer);
+                writer.on('finish', resolve);
+                writer.on('error', reject);
             });
 
-            writer.on('error', async (error) => {
-                console.error(error);
-                await interaction.reply({ content: 'There was an error downloading the file.', ephemeral: true });
-            });
+            await interaction.reply(`File ${file.name} has been successfully downloaded to ${downloadDir}!`);
+            await uploadFile(authClient, filePath, GOOGLE_DRIVE_FOLDER_ID);
+
+            await fs.promises.unlink(filePath);
+            console.log(`File ${file.name} deleted from local storage.`);
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'Failed to download the file.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to process the file.', ephemeral: true });
         }
     },
 };

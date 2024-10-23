@@ -6,6 +6,7 @@ const { google } = require('googleapis');
 const { authorize } = require('../../components/googleAuth');
 const { uploadFile } = require('../../components/gdriveUpload');
 const FolderLocation = require("../../models/folderLocation");
+const { validateGoogleDriveFolder } = require('../../components/folderAuth');
 
 const activeUploadSessions = new Map();
 
@@ -93,6 +94,11 @@ module.exports = {
                 let authClient;
                 try {
                     authClient = await authorize();
+                    const isValidFolder = await validateGoogleDriveFolder(authClient, GOOGLE_DRIVE_FOLDER_ID);
+                    if (!isValidFolder) {
+                        await interaction.reply({ content: 'The provided folder ID is not valid or is not accessible.', ephemeral: true });
+                        return;
+                    }
                 } catch (err) {
                     console.error('Failed to authorize Google Drive:', err);
                     await confirmation.followUp({ content: 'Failed to authorize Google Drive.', ephemeral: true });

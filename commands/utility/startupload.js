@@ -17,9 +17,10 @@ module.exports = {
 
         // Start a new upload session
         const sessionFiles = [];
+        const collectedFileNames = new Set(); // Track collected file names to prevent duplicates
         console.log(`Starting upload session for user: ${userId}`);
 
-        // Create a message collector that only collects messages with image attachments from the user
+        // Create a message collector that collects messages with image attachments from the user
         const collector = interaction.channel.createMessageCollector({
             filter: (message) => {
                 return message.author.id === userId && message.attachments.some(attachment => {
@@ -43,8 +44,17 @@ module.exports = {
             // Process each image attachment in the message
             message.attachments.forEach((attachment) => {
                 if (attachment.contentType && attachment.contentType.startsWith('image/')) {
-                    sessionFiles.push({ name: attachment.name, url: attachment.url });
-                    console.log(`Collected image file: ${attachment.name}`);
+                    // Check for duplicate file names
+                    if (!collectedFileNames.has(attachment.name)) {
+                        collectedFileNames.add(attachment.name);
+                        sessionFiles.push({ name: attachment.name, url: attachment.url });
+                        console.log(`Collected image file: ${attachment.name}`);
+
+                        // Provide feedback to the user
+                        interaction.followUp({ content: `Collected image: ${attachment.name}`, ephemeral: true });
+                    } else {
+                        console.log(`Duplicate image file skipped: ${attachment.name}`);
+                    }
                 }
             });
         });

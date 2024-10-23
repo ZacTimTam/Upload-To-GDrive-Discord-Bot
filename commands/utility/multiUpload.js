@@ -5,8 +5,8 @@ const path = require('path');
 const { google } = require('googleapis');
 const { authorize } = require('../../components/googleAuth');
 const { uploadFile } = require('../../components/gdriveUpload');
+const FolderLocation = require("../../models/folderLocation");
 
-const GOOGLE_DRIVE_FOLDER_ID = '1bdUfktk6-84iorby0fJlnbaYis9xIk1z';
 const activeUploadSessions = new Map();
 
 module.exports = {
@@ -15,6 +15,15 @@ module.exports = {
         .setDescription('Start uploading multiple image files. Click "Upload Images" or "Cancel" when finished'),
     async execute(interaction) {
         const userId = interaction.user.id;
+
+        const folderLocation = await FolderLocation.findOne({ serverId: interaction.guild.id });
+        const GOOGLE_DRIVE_FOLDER_ID = folderLocation ? folderLocation.locationId : null;
+
+        if (!GOOGLE_DRIVE_FOLDER_ID) {
+            // Handle the case where the folder location is not set
+            await interaction.reply({ content: 'Folder location is not set for this server. Please set it using the /setfolder command.', ephemeral: true });
+            return;
+        }
 
         if (activeUploadSessions.has(userId)) {
             await interaction.reply({ content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.', ephemeral: true });

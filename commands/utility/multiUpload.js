@@ -34,6 +34,7 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(upload, cancel);
 
         const sessionFiles = [];
+        const collectedFileNames = new Set(); // Track collected file names to prevent duplicates
         console.log(`Starting upload session for user: ${userId}`);
 
         const collector = interaction.channel.createMessageCollector({
@@ -43,9 +44,13 @@ module.exports = {
 
         collector.on('collect', (message) => {
             message.attachments.forEach(attachment => {
-                if (attachment.contentType.startsWith('image/')) {
+                if (attachment.contentType.startsWith('image/') && !collectedFileNames.has(attachment.name)) {
+                    // Add the file name to the set to avoid duplicates
+                    collectedFileNames.add(attachment.name);
                     sessionFiles.push(attachment);
                     console.log(`Collected image file: ${attachment.name}`);
+                } else {
+                    console.log(`Duplicate image file skipped: ${attachment.name}`);
                 }
             });
         });

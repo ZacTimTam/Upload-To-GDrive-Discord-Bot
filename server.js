@@ -3,6 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
+const { default: mongoose } = require("mongoose");
+
+const mongoosePort = "mongodb://localhost:27018/gdrive-discord-bot";
 
 // Create a new client instance
 const client = new Client({
@@ -18,6 +21,7 @@ client.commands = new Collection();
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    mongooseConenct().catch((err) => console.log(err));
 });
 
 // Load commands from the commands folder
@@ -61,6 +65,11 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     }
 });
+
+async function mongooseConenct(){
+    await mongoose.connect(mongoosePort);
+    console.log("Successfully connected to MongoDB");
+}
 
 // Log in to Discord with your client's token
 client.login(token);

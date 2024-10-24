@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { authorize } = require('../../components/googleAuth');
 const { uploadFile } = require('../../components/gdriveUpload');
-
-const GOOGLE_DRIVE_FOLDER_ID = '1bdUfktk6-84iorby0fJlnbaYis9xIk1z';
+const FolderLocation = require("../../models/folderLocation");
+const { validateGoogleDriveFolder } = require('../../components/folderAuth');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,6 +17,15 @@ module.exports = {
                 .setRequired(true)),
     async execute(interaction) {
         const file = interaction.options.getAttachment('file');
+
+        const folderLocation = await FolderLocation.findOne({ serverId: interaction.guild.id });
+        const GOOGLE_DRIVE_FOLDER_ID = folderLocation ? folderLocation.locationId : null;
+
+        if (!GOOGLE_DRIVE_FOLDER_ID) {
+            // Handle the case where the folder location is not set
+            await interaction.reply({ content: 'Folder location is not set for this server. Please set it using the /setfolder command.', ephemeral: true });
+            return;
+        }
 
         if (!file) {
             await interaction.reply({ content: 'No file was provided!', ephemeral: true });

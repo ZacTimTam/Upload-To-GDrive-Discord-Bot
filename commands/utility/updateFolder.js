@@ -11,7 +11,8 @@ module.exports = {
             option.setName('id')
                 .setDescription('The Google Drive folder location ID')
                 .setRequired(true)
-        ),
+        )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
         const folderPathId = interaction.options.getString('id');

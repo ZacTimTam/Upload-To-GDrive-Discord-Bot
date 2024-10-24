@@ -96,7 +96,7 @@ module.exports = {
                     authClient = await authorize();
                     const isValidFolder = await validateGoogleDriveFolder(authClient, GOOGLE_DRIVE_FOLDER_ID);
                     if (!isValidFolder) {
-                        await interaction.reply({ content: 'The provided folder ID is not valid or is not accessible.', ephemeral: true });
+                        await interaction.reply({ content: 'The provided folder ID is not valid or is not accessible. Please use /setfolder to update folder location', ephemeral: true });
                         return;
                     }
                 } catch (err) {

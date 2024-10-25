@@ -4,8 +4,23 @@ const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
 const { default: mongoose } = require("mongoose");
+const express = require('express');
+const ServerAuth = require('./models/ServerAuth');
+const { google } = require('googleapis');
+require('dotenv').config();
+
+
 
 const mongoosePort = "mongodb://localhost:27018/gdrive-discord-bot";
+const app = express();
+const port = process.env.PORT || 3000;
+
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID,        // Your Google OAuth Client ID
+    process.env.CLIENT_SECRET,    // Your Google OAuth Client Secret
+    process.env.REDIRECT_URI      // Your OAuth Redirect URI, e.g., "http://localhost:3000/oauth2callback"
+);
 
 // Create a new client instance
 const client = new Client({
@@ -73,3 +88,43 @@ async function mongooseConenct(){
 
 // Log in to Discord with your client's token
 client.login(token);
+
+
+app.get('/oauth2callback', async (req, res) => {
+    const code = req.query.code;
+    const state = req.query.state ? JSON.parse(req.query.state) : null;
+
+    if (!code || !state) {
+        return res.status(400).send('Invalid request: missing code or state');
+    }
+
+    const { serverId, folderId } = state;
+
+    try {
+        // Exchange code for tokens
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        // Store the tokens and folder ID in MongoDB
+        await ServerAuth.findOneAndUpdate(
+            { serverId },
+            {
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token,
+                expiryDate: tokens.expiry_date,
+                driveFolderId: folderId
+            },
+            { upsert: true }
+        );
+
+        res.send('Google Drive folder linked successfully!');
+    } catch (error) {
+        console.error('Error handling OAuth callback:', error);
+        res.status(500).send('Authentication failed. Please try again.');
+    }
+});
+
+// Start the web server
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});

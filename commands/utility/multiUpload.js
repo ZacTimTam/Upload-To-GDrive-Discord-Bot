@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('path');
 const { google } = require('googleapis');
 const { authorize } = require('../../components/googleAuth');
-const { uploadFile } = require('../../components/gdriveUpload');
+const { uploadFile, uploadFile2 } = require('../../components/gdriveUpload');
 const FolderLocation = require("../../models/folderLocation");
 const { validateGoogleDriveFolder } = require('../../components/folderAuth');
 
@@ -16,15 +16,7 @@ module.exports = {
         .setDescription('Start uploading multiple image files. Click "Upload Images" or "Cancel" when finished'),
     async execute(interaction) {
         const userId = interaction.user.id;
-
-        const folderLocation = await FolderLocation.findOne({ serverId: interaction.guild.id });
-        const GOOGLE_DRIVE_FOLDER_ID = folderLocation ? folderLocation.locationId : null;
-
-        if (!GOOGLE_DRIVE_FOLDER_ID) {
-            // Handle the case where the folder location is not set
-            await interaction.reply({ content: 'Folder location is not set for this server. Please set it using the /setfolder command.', ephemeral: true });
-            return;
-        }
+        const serverId = interaction.guild.id;
 
         if (activeUploadSessions.has(userId)) {
             await interaction.reply({ content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.', ephemeral: true });
@@ -90,22 +82,6 @@ module.exports = {
                     return;
                 }
 
-                // Authorize Google Drive once and reuse the client
-                let authClient;
-                try {
-                    authClient = await authorize();
-                    const isValidFolder = await validateGoogleDriveFolder(authClient, GOOGLE_DRIVE_FOLDER_ID);
-                    if (!isValidFolder) {
-                        await interaction.reply({ content: 'The provided folder ID is not valid or is not accessible. Please use /setfolder to update folder location', ephemeral: true });
-                        return;
-                    }
-                } catch (err) {
-                    console.error('Failed to authorize Google Drive:', err);
-                    await confirmation.followUp({ content: 'Failed to authorize Google Drive.', ephemeral: true });
-                    activeUploadSessions.delete(userId);
-                    return;
-                }
-
                 // Download and upload files in parallel
                 const downloadDir = path.join(__dirname, '..', 'downloads');
                 if (!fs.existsSync(downloadDir)) {
@@ -128,7 +104,7 @@ module.exports = {
                         console.log(`File ${file.name} has been successfully downloaded to ${downloadDir}!`);
 
                         // Upload the file to Google Drive
-                        await uploadFile(authClient, filePath, GOOGLE_DRIVE_FOLDER_ID);
+                        await uploadFile2(serverId, filePath);
 
                         // Delete the local file after upload
                         await fs.promises.unlink(filePath);

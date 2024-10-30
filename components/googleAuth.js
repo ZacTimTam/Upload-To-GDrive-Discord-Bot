@@ -4,7 +4,7 @@ const path = require('path');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 const ServerAuth = require('../models/ServerAuth');
-
+const { ServerAuthLite } = require('../models/ServerAuthLite');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
@@ -63,7 +63,8 @@ async function authorize() {
 }
 
 async function getAuthorizedClient(serverId) {
-    const serverAuth = await ServerAuth.findOne({ serverId });
+    // Find the server authorization record in SQLite
+    const serverAuth = await ServerAuthLite.findOne({ where: { serverId } });
 
     if (!serverAuth) {
         throw new Error('Server not authenticated.');
@@ -87,16 +88,20 @@ async function getAuthorizedClient(serverId) {
     if (new Date() > new Date(serverAuth.expiryDate)) {
         try {
             const { credentials } = await oauth2Client.refreshAccessToken();
+
             // Update the server's credentials in the database
-            await ServerAuth.findOneAndUpdate(
-                { serverId },
+            await ServerAuthLite.update(
                 {
                     accessToken: credentials.access_token,
                     refreshToken: credentials.refresh_token || serverAuth.refreshToken,
                     expiryDate: credentials.expiry_date
-                }
+                },
+                { where: { serverId } }
             );
+
+            // Set the updated credentials on the OAuth2 client
             oauth2Client.setCredentials(credentials);
+
         } catch (error) {
             console.error('Error refreshing access token:', error);
             throw new Error('Failed to refresh access token. Please re-authenticate.');
@@ -105,6 +110,7 @@ async function getAuthorizedClient(serverId) {
 
     return oauth2Client;
 }
+
 
 module.exports = {
     loadSavedCredentialsIfExist,

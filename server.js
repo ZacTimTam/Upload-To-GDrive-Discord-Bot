@@ -8,8 +8,9 @@ const express = require('express');
 const ServerAuth = require('./models/ServerAuth');
 const { google } = require('googleapis');
 require('dotenv').config();
+const { initializeDatabase, ServerAuthLite } = require('./models/ServerAuthLite');
 
-
+initializeDatabase();
 
 const mongoosePort = "mongodb://localhost:27018/gdrive-discord-bot";
 const app = express();
@@ -36,7 +37,6 @@ client.commands = new Collection();
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-    mongooseConenct().catch((err) => console.log(err));
 });
 
 // Load commands from the commands folder
@@ -105,17 +105,26 @@ app.get('/oauth2callback', async (req, res) => {
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
 
-        // Store the tokens and folder ID in MongoDB
-        await ServerAuth.findOneAndUpdate(
-            { serverId },
-            {
+        // Find or create the ServerAuth record in SQLite
+        const [serverAuthLite, created] = await ServerAuthLite.findOrCreate({
+            where: { serverId },
+            defaults: {
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
                 expiryDate: tokens.expiry_date,
                 driveFolderId: folderId
-            },
-            { upsert: true }
-        );
+            }
+        });
+
+        // If the record already exists, update it with new token information
+        if (!created) {
+            await serverAuthLite.update({
+                accessToken: tokens.access_token,
+                refreshToken: tokens.refresh_token || serverAuthLite.refreshToken,
+                expiryDate: tokens.expiry_date,
+                driveFolderId: folderId
+            });
+        }
 
         res.send('Google Drive folder linked successfully!');
     } catch (error) {

@@ -17,6 +17,8 @@
     "express": "^4.21.1",
     "googleapis": "^105.0.0",
     "mime": "^4.0.4",
-    "mongoose": "^8.7.2"
+    "mongoose": "^8.7.2",
+    "sequelize": "^6.37.5",
+    "sqlite3": "^5.1.7"
   }
 }

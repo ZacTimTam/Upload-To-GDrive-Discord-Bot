@@ -30,14 +30,28 @@ A Discord bot that allows users to link Google Drive folders, upload images dire
 - **Google Cloud Console** account for Google Drive API credentials
 - **Cloudflare Tunnel** for local development (optional)
 
-### Step 1: Google Cloud Setup
+### Step 1: Set Up Your Discord Bot Application
+
+Before deploying your bot, follow the official Discord.js guide to set up your bot application:
+
+1. Visit the [Discord.js Guide on Setting Up a Bot Application](https://discordjs.guide/preparations/setting-up-a-bot-application.html).
+2. Follow each step, including:
+   - Creating a new application on the [Discord Developer Portal](https://discord.com/developers/applications).
+   - Adding a bot to the application.
+   - Assigning appropriate permissions to your bot.
+   - Copying the token for later use in this project.
+
+Make sure to save your bot token securely, as it will be needed for authentication in the next steps.
+
+
+### Step 2: Google Cloud Setup
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/) and create a new project.
 2. Enable the Google Drive API.
 3. Create OAuth 2.0 credentials. Set the authorized redirect URI to your server’s address or `http://localhost:3000/oauth2callback` if testing locally.
 4. Save the `client_id`, `client_secret`, and `redirect_uri`.
 
-### Step 2: Project Setup
+### Step 3: Project Setup
 
 1. **Clone the Repository**:
    ```bash
@@ -68,7 +82,7 @@ A Discord bot that allows users to link Google Drive folders, upload images dire
    }
    ```
 
-### Step 3: Deploy Commands
+### Step 4: Deploy Commands
 
 To make the bot's commands available to all servers or specific servers where the bot is added, use the `deploy-commands-globally.js` script.
 
@@ -87,9 +101,9 @@ To make the bot's commands available to all servers or specific servers where th
 
 For specific server for testing, use the `deploy-commands.js` script.
 
-### Step 4: Start the Bot
+### Step 5: Start the Bot
 
-You can start the bot using either Node.js.
+You can start the bot using Node.js.
 
 #### Using Node
 ```bash

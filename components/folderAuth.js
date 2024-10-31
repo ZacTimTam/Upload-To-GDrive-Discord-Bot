@@ -5,32 +5,28 @@ async function validateGoogleDriveFolder(auth, folderId) {
     const drive = google.drive({ version: 'v3', auth });
 
     try {
-        // Get the file metadata
-        const response = await drive.files.get({
-            fileId: folderId,
-            fields: 'id, mimeType',
+        // Attempt to create a temporary file in the folder
+        const tempFile = await drive.files.create({
+            resource: {
+                name: 'temp_file_for_validation',
+                parents: [folderId]
+            },
+            media: {
+                mimeType: 'text/plain',
+                body: 'This is a temporary file for validation purposes'
+            },
+            fields: 'id'
         });
 
-        const file = response.data;
+        // Clean up by deleting the temporary file
+        await drive.files.delete({ fileId: tempFile.data.id });
 
-        // Check if the file is a folder
-        if (file.mimeType === 'application/vnd.google-apps.folder') {
-            console.log(`Folder ID ${folderId} is valid.`);
-            return true;
-        } else {
-            console.log(`The provided ID ${folderId} is not a folder.`);
-            return false;
-        }
+        return true;
     } catch (error) {
-        if (error.response && error.response.status === 404) {
-            console.log(`Folder ID ${folderId} does not exist.`);
-        } else {
-            console.log(`Error validating folder ID ${folderId}:`, error.message);
-        }
+        console.error(`Error validating Google Drive folder ID ${folderId}:`, error.message);
         return false;
     }
 }
-
 module.exports = {
     validateGoogleDriveFolder
 }

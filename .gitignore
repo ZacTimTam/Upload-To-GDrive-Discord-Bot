@@ -142,3 +142,4 @@ token.json
 #Database Ignore
 database.sqlite
 *.sqlite
+database.sqlite

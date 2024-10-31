@@ -112,7 +112,7 @@ app.get('/oauth2callback', async (req, res) => {
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
                 expiryDate: tokens.expiry_date,
-                driveFolderId: folderId
+                driveFolderId: null
             }
         });
 
@@ -122,7 +122,7 @@ app.get('/oauth2callback', async (req, res) => {
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token || serverAuthLite.refreshToken,
                 expiryDate: tokens.expiry_date,
-                driveFolderId: folderId
+                driveFolderId: null
             });
         }
 

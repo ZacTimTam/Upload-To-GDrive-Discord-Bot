@@ -3,10 +3,8 @@ const axios = require('axios');
 const fs = require('node:fs');
 const path = require('path');
 const { google } = require('googleapis');
-const { authorize } = require('../../components/googleAuth');
-const { uploadFile, uploadFile2 } = require('../../components/gdriveUpload');
-const FolderLocation = require("../../models/folderLocation");
-const { validateGoogleDriveFolder } = require('../../components/folderAuth');
+const { uploadFile2 } = require('../../components/gdriveUpload');
+
 
 const activeUploadSessions = new Map();
 

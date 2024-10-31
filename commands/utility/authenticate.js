@@ -23,16 +23,31 @@ function generateAuthUrl(serverId) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('authenticate')
-        .setDescription('Authenticate Google account to server to link Google Drive folder'),
-    
+        .setDescription('Authenticate with Google Drive to link a folder to this server.'),
+
     async execute(interaction) {
         const serverId = interaction.guild.id;
 
-        const authUrl = generateAuthUrl(serverId);
+        try {
+            // Defer reply to avoid the 3-second timeout error.
+            await interaction.deferReply({ ephemeral: true });
 
-        await interaction.reply({
-            content: `To link Google Drive, please authenticate by clicking [here]( ${authUrl} ).`,
-            ephemeral: true,
-        });
+            // Generate the authentication URL for the user to click.
+            const authUrl = generateAuthUrl(serverId);
+
+            // Send the authentication link to the user.
+            await interaction.editReply({
+                content: `Please authenticate with Google Drive by clicking [here]( ${authUrl} ).`,
+                ephemeral: true
+            });
+        } catch (error) {
+            console.error('Error executing /authenticate:', error);
+
+            // Ensure we only edit the reply, as the interaction is deferred.
+            await interaction.editReply({
+                content: 'An error occurred during authentication. Please try again.',
+                ephemeral: true
+            });
+        }
     }
-}
+};

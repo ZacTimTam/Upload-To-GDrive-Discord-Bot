@@ -138,3 +138,7 @@ config.json
 #Google token and creditial files
 credentials.json
 token.json
+
+#Database Ignore
+database.sqlite
+*.sqlite

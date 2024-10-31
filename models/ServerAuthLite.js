@@ -30,7 +30,7 @@ const ServerAuthLite = sequelize.define('ServerAuthLite', {
     },
     driveFolderId: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     }
 });
 

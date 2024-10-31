@@ -131,6 +131,7 @@ dist
 
 #Config file
 config.json
+config_temp.json
 
 #Ignore download folder
 /commands/downloads

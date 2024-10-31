@@ -3,16 +3,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { token } = require('./config.json');
-const { default: mongoose } = require("mongoose");
 const express = require('express');
-const ServerAuth = require('./models/ServerAuth');
 const { google } = require('googleapis');
 require('dotenv').config();
 const { initializeDatabase, ServerAuthLite } = require('./models/ServerAuthLite');
 
 initializeDatabase();
 
-const mongoosePort = "mongodb://localhost:27018/gdrive-discord-bot";
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -126,7 +123,7 @@ app.get('/oauth2callback', async (req, res) => {
             });
         }
 
-        res.send('Google Drive folder linked successfully!');
+        res.send('Google Drive folder linked successfully! You may close this tab.');
     } catch (error) {
         console.error('Error handling OAuth callback:', error);
         res.status(500).send('Authentication failed. Please try again.');

@@ -1,13 +1,5 @@
-const fs = require('node:fs');
-const fsp = require('node:fs').promises; // For fs.promises-based async operations
-const path = require('path');
-const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
-const ServerAuth = require('../models/ServerAuth');
 const { ServerAuthLite } = require('../models/ServerAuthLite');
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
-const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 require('dotenv').config();
 
 

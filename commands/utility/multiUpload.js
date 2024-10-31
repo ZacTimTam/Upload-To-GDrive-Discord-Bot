@@ -2,7 +2,6 @@ const { ButtonBuilder, ButtonStyle, SlashCommandBuilder, ActionRowBuilder } = re
 const axios = require('axios');
 const fs = require('node:fs');
 const path = require('path');
-const { google } = require('googleapis');
 const { uploadFile2 } = require('../../components/gdriveUpload');
 
 

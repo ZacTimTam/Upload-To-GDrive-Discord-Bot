@@ -81,7 +81,7 @@ To make the bot's commands available to all servers or specific servers where th
 
    ```bash
    node deploy-commands-globally.js
-```
+    ```
 
 > **Note**: Global commands can take up to an hour to propagate across Discord.
 

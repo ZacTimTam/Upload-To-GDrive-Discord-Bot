@@ -5,18 +5,24 @@ const { getAuthorizedClient } = require('../../components/googleAuth');
 const { ServerAuthLite } = require('../../models/ServerAuthLite');
 const { validateGoogleDriveFolder } = require('../../components/folderAuth');
 
+function getLastSegment(url){
+    const segments = url.split('/');
+    const filteredSegements = segments.filter( segement => segement !== '');
+    return filteredSegements.pop();
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setfolder')
         .setDescription('Link a Google Drive folder to this server.')
         .addStringOption(option =>
-            option.setName('id')
-                .setDescription('The Google Drive folder ID')
+            option.setName('drive_link')
+                .setDescription('The Google Drive folder link')
                 .setRequired(true)
         ),
 
     async execute(interaction) {
-        const folderId = interaction.options.getString('id');
+        const folderId = getLastSegment(interaction.options.getString('drive_link'));
         const serverId = interaction.guild.id;
 
         await interaction.deferReply({ ephemeral: true }); // Defer reply to handle longer async operations

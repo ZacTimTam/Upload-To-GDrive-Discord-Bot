@@ -18,9 +18,8 @@ This bot helps manage Google Drive folders and upload files directly from Discor
   - Allows the bot to access Google Drive. If linked to a different account, re-authenticate with this command.
 
 **/setfolder** - Set or update the Google Drive folder for this server.
-  - **Usage:** \`/setfolder id:<folder_id>\`
-  - Find the folder ID by copying it from the Google Drive folder URL after \`folders/\`. 
-  - Example: \`/setfolder id:1aBcD3FgH4IjK5LmN6OpQ7R8S9T0U1VwX\`
+  - **Usage:** \`/setfolder drive_link:<drive_link>\`
+  - Find the folder ID by copying it from the Google Drive folder URL. 
 
 **/multi-upload** - Start an image upload session.
   - **Usage:** \`/multi-upload\`

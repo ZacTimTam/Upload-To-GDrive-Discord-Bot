@@ -113,7 +113,7 @@ node server.js
 ## Usage
 
 1. **Authenticate with Google Drive**: Run `/authenticate` to link your Google Drive account to the bot.
-2. **Set Google Drive Folder**: Use `/setfolder` with the folder ID where files will be uploaded.
+2. **Set Google Drive Folder**: Use `/setfolder` with the folder link where files will be uploaded.
 3. **Upload Images**: Start an upload session using `/multi-upload`.
 4. **End Upload Session**: Conclude the session using `/endupload`.
 

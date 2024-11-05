@@ -1,5 +1,6 @@
 const { ButtonBuilder, ButtonStyle, SlashCommandBuilder, ActionRowBuilder } = require('discord.js');
 const ServerActiveFolder = require('../../models/ServerActiveFolder');
+const { ServerAuthLite } = require('../../models/ServerAuthLite');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,14 +35,14 @@ module.exports = {
         const collectorFilter = i => i.user.id === interaction.user.id;
 
         if (folder) {
-            await interaction.reply({
+            const response = await interaction.reply({
                 content: 'The bot is already actively uploading. Would you like to disable the active upload?',
                 components: [disableRow],
                 ephemeral: true,
             });
 
             try {
-                const confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 30_000 });
+                const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 30_000 });
 
                 if (confirmation.customId === 'disable') {
                     await ServerActiveFolder.destroy({ where: { serverId, channelId } });
@@ -54,21 +55,29 @@ module.exports = {
                 await interaction.followUp({ content: 'There was an error processing your request.', ephemeral: true });
             }
         } else {
-            await interaction.reply({
+            const response = await interaction.reply({
                 content: 'The bot is not actively listening on this channel. Would you like to enable the active upload?',
                 components: [enableRow],
                 ephemeral: true,
             });
 
             try {
-                const confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 30_000 });
-                
+                const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 30_000 });
+
                 if (confirmation.customId === 'enable') {
-                    await ServerActiveFolder.findOrCreate({
-                        where: { serverId, channelId },
-                        defaults: { serverId, channelId }
-                    });
-                    await confirmation.update({ content: 'Active upload has been enabled on this channel.', components: [], ephemeral: true });
+                    const result = await ServerAuthLite.findOne({ where: { serverId } });
+                    
+                    if (result && result.driveFolderId) {
+                        console.log(`Folder ID exists for server ID ${serverId}: ${result.driveFolderId}`);
+                        await ServerActiveFolder.findOrCreate({
+                            where: { serverId, channelId },
+                            defaults: { serverId, channelId }
+                        });
+                        await confirmation.update({ content: 'Active upload has been enabled on this channel.', components: [], ephemeral: true });
+                    } else {
+                        console.log(`No Folder ID found for server ID ${serverId}`);
+                        await confirmation.update({ content: 'Interaction cancelled. Please link a Google Drive Folder to this server.', components: [], ephemeral: true });
+                    }
                 } else if (confirmation.customId === 'cancel') {
                     await confirmation.update({ content: 'Interaction cancelled.', components: [], ephemeral: true });
                 }

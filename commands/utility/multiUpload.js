@@ -4,7 +4,6 @@ const fs = require('node:fs');
 const path = require('path');
 const { uploadFile2 } = require('../../components/gdriveUpload');
 
-
 const activeUploadSessions = new Map();
 
 module.exports = {
@@ -28,18 +27,18 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(upload, cancel);
 
         if (activeUploadSessions.has(userId)) {
-            await interaction.reply({
-                content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.',
-                components: [row],
-                ephemeral: true,
-
-            });
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({
+                    content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.',
+                    components: [row],
+                    ephemeral: true,
+                });
+            }
             return;
         }
 
         const sessionFiles = [];
-        const collectedFileNames = new Set(); // Track collected file names to prevent duplicates
-        console.log(`Starting upload session for user: ${userId}`);
+        const collectedFileNames = new Set();
 
         const collector = interaction.channel.createMessageCollector({
             filter: (message) => message.author.id === userId && message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/')),
@@ -49,19 +48,15 @@ module.exports = {
         collector.on('collect', (message) => {
             message.attachments.forEach(attachment => {
                 if (attachment.contentType.startsWith('image/') && !collectedFileNames.has(attachment.name)) {
-                    // Add the file name to the set to avoid duplicates
                     collectedFileNames.add(attachment.name);
                     sessionFiles.push(attachment);
-                    console.log(`Collected image file: ${attachment.name}`);
-                } else {
-                    console.log(`Duplicate image file skipped: ${attachment.name}`);
                 }
             });
         });
 
         activeUploadSessions.set(userId, { collector, files: sessionFiles });
 
-        const response = await interaction.reply({
+        await interaction.reply({
             content: `Select an action when you have uploaded all the photos:`,
             components: [row],
             ephemeral: true,
@@ -70,7 +65,7 @@ module.exports = {
         const collectorFilter = i => i.user.id === interaction.user.id;
 
         try {
-            const confirmation = await response.awaitMessageComponent({ filter: collectorFilter, time: 300_000 });
+            const confirmation = await interaction.channel.awaitMessageComponent({ filter: collectorFilter, time: 300_000 });
 
             if (confirmation.customId === 'upload') {
                 await confirmation.deferReply({ ephemeral: true });
@@ -84,7 +79,6 @@ module.exports = {
                     return;
                 }
 
-                // Download and upload files in parallel
                 const downloadDir = path.join(__dirname, '..', 'downloads');
                 if (!fs.existsSync(downloadDir)) {
                     fs.mkdirSync(downloadDir, { recursive: true });
@@ -93,7 +87,6 @@ module.exports = {
                 const uploadPromises = files.map(async (file) => {
                     const filePath = path.join(downloadDir, file.name);
                     try {
-                        // Download the file
                         const response = await axios.get(file.url, { responseType: 'stream' });
                         const writer = fs.createWriteStream(filePath);
                         response.data.pipe(writer);
@@ -103,32 +96,35 @@ module.exports = {
                             writer.on('error', reject);
                         });
 
-                        console.log(`File ${file.name} has been successfully downloaded to ${downloadDir}!`);
-
-                        // Upload the file to Google Drive
                         await uploadFile2(serverId, filePath);
-
-                        // Delete the local file after upload
                         await fs.promises.unlink(filePath);
-                        console.log(`File ${file.name} deleted from local storage.`);
                     } catch (error) {
                         console.error(`Failed to process file ${file.name}:`, error);
                     }
                 });
 
-                // Wait for all uploads to complete
                 await Promise.all(uploadPromises);
 
                 activeUploadSessions.delete(userId);
                 await confirmation.followUp({ content: 'Photo upload session ended. Photos have been successfully uploaded to Google Drive!', ephemeral: true });
             } else if (confirmation.customId === 'cancel') {
-                await confirmation.update({ content: 'File upload session has been cancelled.', components: [], ephemeral: true });
+                const { collector } = activeUploadSessions.get(userId) || {};
+                if (collector) collector.stop();
+
                 activeUploadSessions.delete(userId);
+                await confirmation.update({ content: 'File upload session has been cancelled.', components: [], ephemeral: true });
             }
 
         } catch (error) {
             console.error('Error during the confirmation handling:', error);
-            await interaction.editReply({ content: 'Upload session timeout after 5 minutes.', components: [] });
+
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.editReply({ content: 'Upload session timeout after 5 minutes.', components: [] });
+            }
+
+            const { collector } = activeUploadSessions.get(userId) || {};
+            if (collector) collector.stop();
+            activeUploadSessions.delete(userId);
         }
     },
 };

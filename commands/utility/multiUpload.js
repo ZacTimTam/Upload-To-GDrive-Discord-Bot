@@ -15,11 +15,6 @@ module.exports = {
         const userId = interaction.user.id;
         const serverId = interaction.guild.id;
 
-        if (activeUploadSessions.has(userId)) {
-            await interaction.reply({ content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.', ephemeral: true });
-            return;
-        }
-
         const upload = new ButtonBuilder()
             .setCustomId('upload')
             .setLabel('Upload Images')
@@ -31,6 +26,16 @@ module.exports = {
             .setStyle(ButtonStyle.Secondary);
 
         const row = new ActionRowBuilder().addComponents(upload, cancel);
+
+        if (activeUploadSessions.has(userId)) {
+            await interaction.reply({
+                content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.',
+                components: [row],
+                ephemeral: true,
+
+            });
+            return;
+        }
 
         const sessionFiles = [];
         const collectedFileNames = new Set(); // Track collected file names to prevent duplicates

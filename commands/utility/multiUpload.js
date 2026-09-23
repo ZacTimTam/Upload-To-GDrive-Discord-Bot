@@ -6,17 +6,24 @@ const { uploadFile2 } = require('../../components/gdriveUpload');
 
 const activeUploadSessions = new Map();
 
+// Helper: accepts images (except gif) and any video type
+function isAcceptedMedia(contentType) {
+    if (!contentType) return false;
+    if (contentType === 'image/gif') return false;
+    return contentType.startsWith('image/') || contentType.startsWith('video/');
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('multi-upload')
-        .setDescription('Start uploading multiple image files. Click "Upload Images" or "Cancel" when finished'),
+        .setDescription('Start uploading multiple image or video files. Click "Upload" or "Cancel" when finished'),
     async execute(interaction) {
         const userId = interaction.user.id;
         const serverId = interaction.guild.id;
 
         const upload = new ButtonBuilder()
             .setCustomId('upload')
-            .setLabel('Upload Images')
+            .setLabel('Upload Files')
             .setStyle(ButtonStyle.Primary);
 
         const cancel = new ButtonBuilder()
@@ -29,7 +36,7 @@ module.exports = {
         if (activeUploadSessions.has(userId)) {
             if (!interaction.replied && !interaction.deferred) {
                 await interaction.reply({
-                    content: 'You already have an active upload session. Click "Upload Images" or "Cancel" to finish.',
+                    content: 'You already have an active upload session. Click "Upload Files" or "Cancel" to finish.',
                     components: [row],
                     ephemeral: true,
                 });
@@ -41,13 +48,13 @@ module.exports = {
         const collectedFileNames = new Set();
 
         const collector = interaction.channel.createMessageCollector({
-            filter: (message) => message.author.id === userId && message.attachments.some(attachment => attachment.contentType && attachment.contentType.startsWith('image/')),
+            filter: (message) => message.author.id === userId && message.attachments.some(attachment => isAcceptedMedia(attachment.contentType)),
             time: 300000, // 5 minutes max for the session
         });
 
         collector.on('collect', (message) => {
             message.attachments.forEach(attachment => {
-                if (attachment.contentType.startsWith('image/') && !collectedFileNames.has(attachment.name)) {
+                if (isAcceptedMedia(attachment.contentType) && !collectedFileNames.has(attachment.name)) {
                     collectedFileNames.add(attachment.name);
                     sessionFiles.push(attachment);
                 }
@@ -57,7 +64,7 @@ module.exports = {
         activeUploadSessions.set(userId, { collector, files: sessionFiles });
 
         await interaction.reply({
-            content: `Select an action when you have uploaded all the photos:`,
+            content: `Select an action when you have uploaded all the files:`,
             components: [row],
             ephemeral: true,
         });
@@ -106,7 +113,7 @@ module.exports = {
                 await Promise.all(uploadPromises);
 
                 activeUploadSessions.delete(userId);
-                await confirmation.followUp({ content: 'Photo upload session ended. Photos have been successfully uploaded to Google Drive!', ephemeral: true });
+                await confirmation.followUp({ content: 'Upload session ended. Files have been successfully uploaded to Google Drive!', ephemeral: true });
             } else if (confirmation.customId === 'cancel') {
                 const { collector } = activeUploadSessions.get(userId) || {};
                 if (collector) collector.stop();

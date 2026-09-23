@@ -21,7 +21,7 @@ This bot helps manage Google Drive folders and upload files directly from Discor
   - **Usage:** \`/setfolder drive_link:<drive_link>\`
   - Find the folder ID by copying it from the Google Drive folder URL. 
 
-**/multi-upload** - Start an image upload session.
+**/multi-upload** - Start an image or video upload session.
   - **Usage:** \`/multi-upload\`
   - Starts a session to upload images, which will be stored in the specified folder. Use **Upload** or **Cancel** to end.
 
